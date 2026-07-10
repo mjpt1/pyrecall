@@ -167,7 +167,7 @@ pytest
 ruff check src tests
 ```
 
-See [CHANGELOG.md](CHANGELOG.md) for release history and [docs/LAUNCH.md](docs/LAUNCH.md) for the public launch checklist.
+See [CHANGELOG.md](CHANGELOG.md) for release history, [docs/LAUNCH.md](docs/LAUNCH.md) for the public launch checklist, and [docs/SPONSORS.md](docs/SPONSORS.md) for funding setup.
 
 ## License
 
