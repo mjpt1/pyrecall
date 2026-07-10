@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" role="img" aria-labelledby="title desc">
+  <title id="title">PyRecall demo</title>
+  <desc id="desc">Terminal session: init, learn a correction, recall the skill</desc>
+  <defs>
+    <style>
+      .bg { fill: #0f1419; }
+      .frame { fill: #161b22; stroke: #30363d; stroke-width: 1; }
+      .titlebar { fill: #21262d; }
+      .dot-r { fill: #ff5f56; }
+      .dot-y { fill: #ffbd2e; }
+      .dot-g { fill: #27c93f; }
+      .prompt { fill: #7ee787; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 15px; }
+      .cmd { fill: #e6edf3; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 15px; }
+      .out { fill: #9da7b3; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; }
+      .ok { fill: #3fb950; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; font-weight: 600; }
+      .accent { fill: #58a6ff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; }
+      .muted { fill: #6e7681; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+      .line { opacity: 0; }
+      .l1 { animation: show 12s infinite; animation-delay: 0.2s; }
+      .l2 { animation: show 12s infinite; animation-delay: 1.1s; }
+      .l3 { animation: show 12s infinite; animation-delay: 2.0s; }
+      .l4 { animation: show 12s infinite; animation-delay: 3.2s; }
+      .l5 { animation: show 12s infinite; animation-delay: 4.0s; }
+      .l6 { animation: show 12s infinite; animation-delay: 5.4s; }
+      .l7 { animation: show 12s infinite; animation-delay: 6.2s; }
+      .l8 { animation: show 12s infinite; animation-delay: 7.0s; }
+      .l9 { animation: show 12s infinite; animation-delay: 7.8s; }
+      .l10 { animation: show 12s infinite; animation-delay: 8.6s; }
+      .l11 { animation: show 12s infinite; animation-delay: 9.4s; }
+      @keyframes show {
+        0% { opacity: 0; }
+        4% { opacity: 1; }
+        88% { opacity: 1; }
+        94% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="520" rx="16"/>
+  <rect class="frame" x="24" y="24" width="872" height="472" rx="12"/>
+  <rect class="titlebar" x="24" y="24" width="872" height="42" rx="12"/>
+  <rect class="titlebar" x="24" y="42" width="872" height="24"/>
+  <circle class="dot-r" cx="52" cy="45" r="6"/>
+  <circle class="dot-y" cx="74" cy="45" r="6"/>
+  <circle class="dot-g" cx="96" cy="45" r="6"/>
+  <text class="muted" x="460" y="50" text-anchor="middle">pyrecall  local memory for Python projects</text>
+
+  <g transform="translate(48, 96)">
+    <text class="line l1"><tspan class="prompt">$</tspan><tspan class="cmd">  pyrecall init</tspan></text>
+    <text class="line l2" y="28"><tspan class="ok">Initialized</tspan><tspan class="out">  .pyrecall/  · seeded 6 Python skills</tspan></text>
+
+    <text class="line l3" y="72"><tspan class="prompt">$</tspan><tspan class="cmd">  pyrecall learn --rejected "unittest.TestCase" --preferred "pytest assert + fixtures"</tspan></text>
+    <text class="line l4" y="100"><tspan class="ok">Learned skill</tspan><tspan class="out">  unittest-testcase-pytest-assert</tspan></text>
+    <text class="line l5" y="128"><tspan class="accent">Prefer:</tspan><tspan class="out"> pytest assert + fixtures</tspan></text>
+
+    <text class="line l6" y="172"><tspan class="prompt">$</tspan><tspan class="cmd">  pyrecall recall "how should tests be written"</tspan></text>
+    <text class="line l7" y="200"><tspan class="out">[1] (skill) unittest-testcase-pytest-assert</tspan></text>
+    <text class="line l8" y="228"><tspan class="out">    Prefer pytest over unittest. Use plain assert and fixtures.</tspan></text>
+    <text class="line l9" y="256"><tspan class="out">[2] (convention) Testing baseline</tspan></text>
+    <text class="line l10" y="284"><tspan class="out">    Put tests under tests/. Name files test_*.py.</tspan></text>
+    <text class="line l11" y="328"><tspan class="muted">correction remembered · next session starts smarter</tspan></text>
+  </g>
+</svg>

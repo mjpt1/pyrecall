@@ -2,9 +2,23 @@
 
 Local project memory and correction learning for Python workflows.
 
+<p align="center">
+  <img src="docs/demo.svg" alt="PyRecall demo: init, learn a correction, recall the skill" width="920" />
+</p>
+
 PyRecall keeps durable notes about your repository, turns corrections into reusable skills, and serves them back through a CLI or a stdio tool bridge that compatible coding tools can call.
 
 No cloud account. No network calls for recall. Everything stays in `.pyrecall/` inside your project.
+
+Replay the animated session locally:
+
+```bash
+# Unix
+bash examples/demo.sh
+
+# Windows PowerShell
+./examples/demo.ps1
+```
 
 ## Why
 
