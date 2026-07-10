@@ -5,24 +5,28 @@
 - [`.github/FUNDING.yml`](../.github/FUNDING.yml) — enables the **Sponsor** button on the repository
 - Link target: GitHub user `mjpt1`
 
-## GitHub Sponsors (payouts)
+## Recommended path for this project
 
-Anyone can *sponsor* maintainers in supported programs, but **receiving payouts** requires living in a [supported region](https://docs.github.com/en/sponsors/getting-started-with-github-sponsors/about-github-sponsors#supported-regions-for-github-sponsors).
+1. Keep `.github/FUNDING.yml` (already done — Sponsor button on the repo).
+2. Join the **GitHub Sponsors waitlist** for account `mjpt1` if payouts are not available in your region yet.
+3. When GitHub approves the region / listing, complete profile, tiers, 2FA, and payout details under your own identity.
+4. Optional later: add Ko-fi / Buy Me a Coffee only if you want a second channel — not required for waitlist.
 
-If your region is not supported yet:
+### Join the waitlist
 
-1. Open https://github.com/sponsors
-2. Click **Get sponsored** / join the **waitlist** for your account
-3. Keep `FUNDING.yml` in place so the button is ready when approval lands
+1. Sign in to GitHub as `mjpt1`.
+2. Open: https://github.com/sponsors/mjpt1/signup  
+   Fallback: https://github.com/sponsors → **Get sponsored**
+3. If the region is unsupported, GitHub should offer a **waitlist** — join it with accurate personal details.
+4. Do not use another person’s bank or tax identity.
 
-Signup also needs:
+### After you are on the waitlist
 
-- 2FA enabled on GitHub
-- Profile details + tiers (monthly and one-time)
-- Bank / tax info **or** a fiscal host (chosen at signup time)
+Nothing else is required in the repo. When approval arrives, GitHub emails you; then finish:
 
-Direct link to start: https://github.com/sponsors/mjpt1/signup  
-(If that 404s, use https://github.com/sponsors and choose your account.)
+- profile bio + featured repos (include `pyrecall`)
+- monthly + one-time tiers (see suggested tiers below)
+- payout method in a supported setup GitHub offers you at that time
 
 ## Practical alternatives (work worldwide)
 
