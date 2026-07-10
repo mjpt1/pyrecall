@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "py-recall"
+name = "pyrecall-cli"
 version = "0.1.0"
 description = "Local project memory and correction learning for Python workflows"
 readme = "README.md"

@@ -1,10 +1,14 @@
 # Publishing to PyPI
 
-Distribution name on PyPI: **`py-recall`**  
+Distribution name on PyPI: **`pyrecall-cli`**  
 Import / CLI name: **`pyrecall`**
 
+> Why not `pyrecall` / `py-recall`? PyPI treats hyphen/underscore as the same
+> normalized name. `pyrecall` is already taken, so `py-recall` is rejected as
+> "too similar".
+
 ```bash
-pip install py-recall
+pip install pyrecall-cli
 pyrecall --help
 ```
 
@@ -14,13 +18,10 @@ pyrecall --help
 |-------|--------|
 | GitHub workflow `publish.yml` | Ready |
 | GitHub environment `pypi` | Ready |
-| PyPI Trusted Publisher | **Needs one-time setup in your PyPI account** |
-| First upload of `py-recall` | Blocked until publisher exists |
+| PyPI Trusted Publisher | Add pending publisher for `pyrecall-cli` |
+| First upload | After publisher is added |
 
-Last failure reason: `invalid-publisher` — no matching publisher on PyPI for  
-`repo:mjpt1/pyrecall:environment:pypi`.
-
-## One-time setup (you must click this)
+## One-time setup
 
 1. Log in: https://pypi.org/account/login/
 2. Open: https://pypi.org/manage/account/publishing/
@@ -28,7 +29,7 @@ Last failure reason: `invalid-publisher` — no matching publisher on PyPI for
 
 | Field | Value |
 |-------|-------|
-| PyPI Project Name | `py-recall` |
+| PyPI Project Name | `pyrecall-cli` |
 | Owner | `mjpt1` |
 | Repository | `pyrecall` |
 | Workflow name | `publish.yml` |
@@ -37,8 +38,6 @@ Last failure reason: `invalid-publisher` — no matching publisher on PyPI for
 4. Click **Add**.
 
 ## After you add the publisher
-
-Tell the maintainer / re-run:
 
 ```bash
 gh run rerun 29109465401 --failed
@@ -64,5 +63,3 @@ twine check dist/*
 python -m build
 twine upload dist/*
 ```
-
-Use a PyPI API token (create at https://pypi.org/manage/account/token/).

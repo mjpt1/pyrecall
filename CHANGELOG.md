@@ -22,6 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- PyPI distribution name is `py-recall`; import and CLI remain `pyrecall`
+- PyPI distribution name is `pyrecall-cli` (because `pyrecall` / `py-recall` collide with an existing project); import and CLI remain `pyrecall`
 
 [0.1.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.1.0

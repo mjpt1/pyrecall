@@ -7,7 +7,7 @@ No network. The server only reads/writes the `.pyrecall/` store in the project y
 ## 1. Install and initialize the project
 
 ```bash
-pip install py-recall
+pip install pyrecall-cli
 cd /path/to/your/python-project
 pyrecall init
 pyrecall index

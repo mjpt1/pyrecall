@@ -1,7 +1,7 @@
 # PyRecall
 
 [![CI](https://github.com/mjpt1/pyrecall/actions/workflows/ci.yml/badge.svg)](https://github.com/mjpt1/pyrecall/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/badge/PyPI-py--recall-blue)](https://pypi.org/project/py-recall/)
+[![PyPI](https://img.shields.io/badge/PyPI-pyrecall--cli-blue)](https://pypi.org/project/pyrecall-cli/)
 
 Local project memory and correction learning for Python workflows.
 
@@ -30,7 +30,7 @@ Coding tools forget project preferences between sessions. You correct the same m
 ## Install
 
 ```bash
-pip install py-recall
+pip install pyrecall-cli
 ```
 
 This installs the `pyrecall` command and the `pyrecall` Python package.
@@ -85,7 +85,7 @@ Compatible coding tools that speak JSON-RPC over stdio can attach PyRecall as a 
 ### Quick connect
 
 ```bash
-pip install py-recall
+pip install pyrecall-cli
 cd your-python-project
 pyrecall init
 pyrecall serve
