@@ -1,0 +1,22 @@
+{
+  "name": "demo-project",
+  "language": "python",
+  "include_globs": [
+    "**/*.py",
+    "**/*.md",
+    "**/pyproject.toml",
+    "**/CONTRIBUTING*",
+    "**/CONVENTIONS.md"
+  ],
+  "exclude_globs": [
+    "**/.git/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/.pyrecall/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "max_file_bytes": 512000,
+  "share_skills": false
+}

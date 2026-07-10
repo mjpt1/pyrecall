@@ -1,0 +1,11 @@
+{
+  "toolServers": {
+    "pyrecall": {
+      "command": "pyrecall",
+      "args": ["serve"],
+      "cwd": ".",
+      "env": {}
+    }
+  },
+  "notes": "Point cwd at the Python project that contains .pyrecall/. Restart the host tool after changing this file."
+}
