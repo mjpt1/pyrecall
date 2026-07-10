@@ -55,7 +55,7 @@ dev = [
 Homepage = "https://github.com/mjpt1/pyrecall"
 Repository = "https://github.com/mjpt1/pyrecall"
 Issues = "https://github.com/mjpt1/pyrecall/issues"
-Changelog = "https://github.com/mjpt1/pyrecall/releases"
+Changelog = "https://github.com/mjpt1/pyrecall/blob/master/CHANGELOG.md"
 
 [project.scripts]
 pyrecall = "pyrecall.cli:app"
@@ -71,6 +71,7 @@ include = [
   "/docs",
   "/README.md",
   "/LICENSE",
+  "/CHANGELOG.md",
   "/pyproject.toml",
   "/CONTRIBUTING.md",
 ]

@@ -167,6 +167,8 @@ pytest
 ruff check src tests
 ```
 
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## License
 
 MIT
