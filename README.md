@@ -1,5 +1,8 @@
 # PyRecall
 
+[![CI](https://github.com/mjpt1/pyrecall/actions/workflows/ci.yml/badge.svg)](https://github.com/mjpt1/pyrecall/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/badge/PyPI-py--recall-blue)](https://pypi.org/project/py-recall/)
+
 Local project memory and correction learning for Python workflows.
 
 <p align="center">

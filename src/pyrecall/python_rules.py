@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pyrecall.models import Memory, MemoryKind, Skill
+
+if TYPE_CHECKING:
+    from pyrecall.store import Store
 
 DEFAULT_SKILLS: list[Skill] = [
     Skill(
@@ -34,7 +39,10 @@ DEFAULT_SKILLS: list[Skill] = [
     ),
     Skill(
         name="context-managers-for-io",
-        rule="Open files and connections with context managers (with ...) so resources close reliably.",
+        rule=(
+            "Open files and connections with context managers (with ...) "
+            "so resources close reliably."
+        ),
         examples=["with path.open(encoding='utf-8') as fh:"],
         tags=["python", "io"],
     ),
@@ -77,10 +85,7 @@ DEFAULT_MEMORIES: list[Memory] = [
 ]
 
 
-def seed_defaults(store: "Store") -> dict[str, int]:
-    from pyrecall.store import Store
-
-    assert isinstance(store, Store)
+def seed_defaults(store: Store) -> dict[str, int]:
     skills_added = 0
     memories_added = 0
     for skill in DEFAULT_SKILLS:

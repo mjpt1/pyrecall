@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from pyrecall.models import Correction, Memory, MemoryKind, Skill, utcnow
 from pyrecall.paths import db_path, ensure_store

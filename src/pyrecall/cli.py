@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -30,7 +29,7 @@ app = typer.Typer(
 console = Console()
 
 
-def _root(path: Optional[Path]) -> Path:
+def _root(path: Path | None) -> Path:
     return find_project_root(path) if path else find_project_root()
 
 
@@ -47,10 +46,10 @@ def version_cmd() -> None:
 
 @app.command("init")
 def init_cmd(
-    path: Optional[Path] = typer.Option(
+    path: Path | None = typer.Option(
         None, "--path", "-p", help="Project root (default: cwd)"
     ),
-    name: Optional[str] = typer.Option(None, "--name", "-n", help="Project name"),
+    name: str | None = typer.Option(None, "--name", "-n", help="Project name"),
     force: bool = typer.Option(False, "--force", help="Overwrite config if present"),
 ) -> None:
     """Initialize local memory store in the current project."""
@@ -75,7 +74,7 @@ def init_cmd(
 
 @app.command("index")
 def index_cmd(
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
     keep: bool = typer.Option(
         False, "--keep", help="Keep previous indexed entries instead of replacing them"
     ),
@@ -96,7 +95,7 @@ def remember_cmd(
     body: str = typer.Argument(..., help="Durable note / decision / convention"),
     kind: str = typer.Option("note", "--kind", "-k", help="decision|convention|note|doc"),
     tag: list[str] = typer.Option(["python"], "--tag", "-t"),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Store a durable project memory."""
     root = _root(path)
@@ -107,9 +106,9 @@ def remember_cmd(
 
 @app.command("learn")
 def learn_cmd(
-    rejected: Optional[str] = typer.Option(None, "--rejected", "-r"),
-    preferred: Optional[str] = typer.Option(None, "--preferred", "-P"),
-    blob: Optional[str] = typer.Option(
+    rejected: str | None = typer.Option(None, "--rejected", "-r"),
+    preferred: str | None = typer.Option(None, "--preferred", "-P"),
+    blob: str | None = typer.Option(
         None,
         "--blob",
         "-b",
@@ -117,7 +116,7 @@ def learn_cmd(
     ),
     context: str = typer.Option("", "--context", "-c"),
     reason: str = typer.Option("", "--reason"),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Learn a reusable skill from a correction."""
     root = _root(path)
@@ -147,7 +146,7 @@ def recall_cmd(
     query: str = typer.Argument(..., help="What to look up"),
     limit: int = typer.Option(8, "--limit", "-n"),
     raw: bool = typer.Option(False, "--raw", help="Print JSON instead of context block"),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Recall relevant memories and skills."""
     root = _root(path)
@@ -163,7 +162,7 @@ def recall_cmd(
 
 @app.command("skills")
 def skills_cmd(
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
     all_skills: bool = typer.Option(False, "--all", help="Include inactive skills"),
 ) -> None:
     """List learned skills."""
@@ -185,7 +184,7 @@ def skills_cmd(
 
 
 @app.command("stats")
-def stats_cmd(path: Optional[Path] = typer.Option(None, "--path", "-p")) -> None:
+def stats_cmd(path: Path | None = typer.Option(None, "--path", "-p")) -> None:
     """Show store statistics."""
     root = _root(path)
     stats = Store(root).stats()
@@ -198,7 +197,7 @@ def stats_cmd(path: Optional[Path] = typer.Option(None, "--path", "-p")) -> None
 @app.command("playbook")
 def playbook_cmd(
     out: Path = typer.Option(Path("SKILLS.md"), "--out", "-o"),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Write active skills to a markdown playbook."""
     root = _root(path)
@@ -209,7 +208,7 @@ def playbook_cmd(
 @app.command("export")
 def export_cmd(
     out: Path = typer.Option(Path("pyrecall-export.json"), "--out", "-o"),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Export memories, corrections, and skills to JSON."""
     root = _root(path)
@@ -228,7 +227,7 @@ def export_cmd(
 @app.command("import-data")
 def import_cmd(
     source: Path = typer.Argument(..., exists=True, readable=True),
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Import a previously exported JSON dump."""
     root = _root(path)
@@ -254,7 +253,7 @@ def import_cmd(
 
 @app.command("serve")
 def serve_cmd(
-    path: Optional[Path] = typer.Option(None, "--path", "-p"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Run the stdio tool bridge for compatible coding tools."""
     root = _root(path)

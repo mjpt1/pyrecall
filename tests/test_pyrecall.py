@@ -114,7 +114,11 @@ def test_bridge_tools(project: Path) -> None:
             "jsonrpc": "2.0",
             "id": 1,
             "method": "initialize",
-            "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "0"}},
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "0"},
+            },
         }
     )
     assert init is not None
@@ -154,7 +158,10 @@ def test_bridge_tools(project: Path) -> None:
     )
     assert recalled is not None
     text = recalled["result"]["content"][0]["text"]
-    assert "except" in text.lower() or "ValueError" in text or "skill" in text.lower() or "No matching" in text or len(text) > 0
+    assert any(
+        token in text.lower()
+        for token in ("except", "valueerror", "skill", "no matching")
+    ) or len(text) > 0
 
 
 def test_cli_init_learn_recall(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
