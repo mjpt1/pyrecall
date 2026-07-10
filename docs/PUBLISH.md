@@ -8,17 +8,47 @@ pip install py-recall
 pyrecall --help
 ```
 
-## One-time setup
+## Status
 
-1. Create an account at [pypi.org](https://pypi.org/account/register/).
-2. Enable 2FA.
-3. Prefer **Trusted Publishing** (no long-lived token):
-   - PyPI → Your projects → Publishing → Add a new pending publisher
-   - Owner: `mjpt1`
-   - Repository: `pyrecall`
-   - Workflow: `publish.yml`
-   - Environment: `pypi`
-4. On GitHub: Settings → Environments → create `pypi` (optional protection rules).
+| Piece | Status |
+|-------|--------|
+| GitHub workflow `publish.yml` | Ready |
+| GitHub environment `pypi` | Ready |
+| PyPI Trusted Publisher | **Needs one-time setup in your PyPI account** |
+| First upload of `py-recall` | Blocked until publisher exists |
+
+Last failure reason: `invalid-publisher` — no matching publisher on PyPI for  
+`repo:mjpt1/pyrecall:environment:pypi`.
+
+## One-time setup (you must click this)
+
+1. Log in: https://pypi.org/account/login/
+2. Open: https://pypi.org/manage/account/publishing/
+3. Under **Add a new pending publisher**, enter **exactly**:
+
+| Field | Value |
+|-------|-------|
+| PyPI Project Name | `py-recall` |
+| Owner | `mjpt1` |
+| Repository | `pyrecall` |
+| Workflow name | `publish.yml` |
+| Environment name | `pypi` |
+
+4. Click **Add**.
+
+## After you add the publisher
+
+Tell the maintainer / re-run:
+
+```bash
+gh run rerun 29109465401 --failed
+```
+
+Or:
+
+```bash
+gh workflow run publish.yml
+```
 
 ## Local build check
 
@@ -28,19 +58,11 @@ python -m build
 twine check dist/*
 ```
 
-## Publish
-
-### Recommended: GitHub Release
-
-1. Bump `version` in `pyproject.toml`.
-2. Push a tag: `git tag v0.1.0 && git push origin v0.1.0`
-3. Create a GitHub Release for that tag — `publish.yml` builds and uploads to PyPI.
-
-### Manual (API token)
+## Manual upload (API token fallback)
 
 ```bash
 python -m build
 twine upload dist/*
 ```
 
-Use a PyPI API token with permission limited to the `py-recall` project.
+Use a PyPI API token (create at https://pypi.org/manage/account/token/).
