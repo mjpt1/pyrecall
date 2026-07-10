@@ -27,6 +27,14 @@ Coding tools forget project preferences between sessions. You correct the same m
 ## Install
 
 ```bash
+pip install py-recall
+```
+
+This installs the `pyrecall` command and the `pyrecall` Python package.
+
+For local development:
+
+```bash
 pip install -e ".[dev]"
 ```
 

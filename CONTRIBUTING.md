@@ -17,7 +17,11 @@ pip install -e ".[dev]"
 ```bash
 pytest
 ruff check src tests
+python -m build
+twine check dist/*
 ```
+
+Publishing steps: [docs/PUBLISH.md](docs/PUBLISH.md).
 
 ## Guidelines
 

@@ -20,3 +20,6 @@ Thumbs.db
 .pyrecall/store.db
 .pyrecall/index/
 *.db-journal
+dist/
+build/
+*.egg-info/
