@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "pyrecall": {
+      "command": "python",
+      "args": ["-m", "pyrecall", "serve"],
+      "cwd": "C:/Users/you/projects/myapp"
+    }
+  }
+}

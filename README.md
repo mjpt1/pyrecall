@@ -78,34 +78,55 @@ pyrecall learn --blob "avoid: bare except | prefer: except ValueError as exc"
 
 ## Stdio tool bridge
 
-Compatible coding tools that speak JSON-RPC over stdio can attach PyRecall as a local tool server:
+Compatible coding tools that speak JSON-RPC over stdio can attach PyRecall as a local tool server.
+
+**Full guide:** [docs/BRIDGE.md](docs/BRIDGE.md)
+
+### Quick connect
 
 ```bash
+pip install py-recall
+cd your-python-project
+pyrecall init
 pyrecall serve
 ```
 
-Exposed tools:
-
-- `search_memory` — ranked memories and skills
-- `get_context` — ready-to-paste context block
-- `add_memory` — store a durable note
-- `learn_correction` — record a correction and create a skill
-- `list_skills` — list active skills
-- `project_stats` — counts
-
-Example client config (stdio):
+Add this to your host tool config (restart the host afterward):
 
 ```json
 {
   "pyrecall": {
     "command": "pyrecall",
     "args": ["serve"],
-    "cwd": "/path/to/your/project"
+    "cwd": "/absolute/path/to/your/python-project"
   }
 }
 ```
 
-See [examples/bridge.client.json](examples/bridge.client.json).
+Windows / PATH-safe variant:
+
+```json
+{
+  "pyrecall": {
+    "command": "python",
+    "args": ["-m", "pyrecall", "serve"],
+    "cwd": "C:/Users/you/projects/myapp"
+  }
+}
+```
+
+Ready-made files: [bridge.client.json](examples/bridge.client.json) · [bridge.mcp.json](examples/bridge.mcp.json) · [bridge.windows.json](examples/bridge.windows.json)
+
+### Tools exposed
+
+| Tool | Purpose |
+|------|---------|
+| `get_context` | Paste-ready conventions + skills for a task |
+| `search_memory` | Ranked search over memories and skills |
+| `learn_correction` | Turn “don’t do X, do Y” into a durable skill |
+| `add_memory` | Store a decision / convention / note |
+| `list_skills` | List active skills |
+| `project_stats` | Store counts |
 
 ## How learning works
 

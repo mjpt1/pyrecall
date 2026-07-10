@@ -3,9 +3,14 @@
     "pyrecall": {
       "command": "pyrecall",
       "args": ["serve"],
-      "cwd": ".",
+      "cwd": "/absolute/path/to/your/python-project",
       "env": {}
     }
   },
-  "notes": "Point cwd at the Python project that contains .pyrecall/. Restart the host tool after changing this file."
+  "notes": [
+    "Replace cwd with the project that contains .pyrecall/.",
+    "Restart the host tool after changing this file.",
+    "If pyrecall is not on PATH, use command python with args [\"-m\", \"pyrecall\", \"serve\"].",
+    "Full guide: docs/BRIDGE.md"
+  ]
 }
