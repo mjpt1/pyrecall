@@ -5,6 +5,35 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-11
+
+### Added
+
+- `pyrecall setup-host` — write `HOST_RULES.md`, bridge JSON with project cwd, and an `AGENTS.md` section
+- `pyrecall harvest` — turn README / CONTRIBUTING / AGENTS bullets into durable conventions
+- Bridge tool `harvest_docs`; stronger REQUIRED wording on `get_context` / `learn_correction`
+- 30s demo scripts (`examples/demo.sh` / `demo.ps1`) and [docs/DEMO.md](docs/DEMO.md) recording guide
+
+### Changed
+
+- `init` runs host setup (rules + workflow + AGENTS section)
+- Workflow text points hosts at `HOST_RULES.md` and `harvest`
+
+## [0.3.0] - 2026-07-11
+
+### Added
+
+- `pyrecall watch` — poll docs/config/Python files and re-index on change
+- `pyrecall packs list|install` — optional packs: fastapi, django, sqlalchemy, ruff
+- `pyrecall workflow` — sticky before/after-edit checklist; written on `init`
+- Recall `--tag` filter and `why` explanations on each hit
+- Bridge tool `install_pack`; `get_context` / `search_memory` accept optional `tags`
+
+### Changed
+
+- `get_context` output includes why each result matched
+- Bridge `learn_correction` description nudges hosts to persist user corrections
+
 ## [0.2.0] - 2026-07-11
 
 ### Added
@@ -44,5 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - PyPI distribution name is `pyrecall-cli` (because `pyrecall` / `py-recall` collide with an existing project); import and CLI remain `pyrecall`
 
+[0.4.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.4.0
+[0.3.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.1.0

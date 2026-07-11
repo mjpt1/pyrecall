@@ -92,11 +92,13 @@ After editing the host config, **restart the host tool** so it reloads servers.
 
 | Tool | When to use it |
 |------|----------------|
-| `get_context` | Before editing — paste-ready conventions + skills for a task |
-| `search_memory` | Structured search over memories and skills |
+| `get_context` | Before editing — paste-ready conventions + skills (includes why matched) |
+| `search_memory` | Structured search; optional `tags` filter |
 | `learn_correction` | User said “don’t do X, do Y instead” — persist it |
 | `add_memory` | Save a decision / convention / note |
 | `list_skills` | Inspect active skills |
+| `install_pack` | Install fastapi / django / sqlalchemy / ruff conventions |
+| `harvest_docs` | Import convention bullets from README / CONTRIBUTING / AGENTS |
 | `project_stats` | Quick health check of the local store |
 
 ### Suggested workflow inside a session
@@ -105,6 +107,8 @@ After editing the host config, **restart the host tool** so it reloads servers.
 2. Do the work using that context.
 3. If the user corrects the approach, call `learn_correction` with `rejected` + `preferred`.
 4. Next session, `get_context` / `search_memory` will surface that skill.
+
+Also run `pyrecall setup-host` once so `.pyrecall/HOST_RULES.md`, bridge JSON, and an `AGENTS.md` section document the same loop. Use `pyrecall harvest` after editing project docs. Keep `pyrecall watch` running in a side terminal if docs/config change often.
 
 ### Example `learn_correction` arguments
 

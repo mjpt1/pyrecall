@@ -13,7 +13,7 @@ PyRecall keeps durable notes about your repository, turns corrections into reusa
 
 No cloud account. No network calls for recall. Everything stays in `.pyrecall/` inside your project.
 
-Replay the same session locally:
+Replay the same **~30s learn → recall** session locally:
 
 ```bash
 # Unix
@@ -22,6 +22,8 @@ bash examples/demo.sh
 # Windows PowerShell
 ./examples/demo.ps1
 ```
+
+Recording tips: [docs/DEMO.md](docs/DEMO.md)
 
 ## Why
 
@@ -57,8 +59,9 @@ Requires Python 3.10+.
 ```bash
 cd your-python-project
 pyrecall init
+pyrecall harvest
 pyrecall index
-pyrecall remember "API errors" "Raise domain exceptions from services; map to HTTP in the API layer only."
+pyrecall setup-host
 pyrecall learn --rejected "unittest.TestCase" --preferred "pytest assert + fixtures" --reason "Repo standard"
 pyrecall recall "how should tests be written"
 ```
@@ -74,18 +77,53 @@ pyrecall learn --blob "avoid: bare except | prefer: except ValueError as exc"
 
 | Command | Purpose |
 |---------|---------|
-| `pyrecall init` | Create `.pyrecall/` and seed Python defaults |
+| `pyrecall init` | Create `.pyrecall/`, seed defaults, host rules + workflow |
+| `pyrecall harvest` | Turn README / CONTRIBUTING / AGENTS bullets into conventions |
 | `pyrecall index` | Index docs and Python module signals |
+| `pyrecall watch` | Re-index when docs/config/Python files change |
 | `pyrecall remember` | Store a decision / convention / note |
 | `pyrecall learn` | Distill a correction into a skill |
-| `pyrecall recall` | Search memories and skills |
+| `pyrecall recall` | Search memories and skills (`--tag`, `--why`) |
 | `pyrecall skills` | List learned skills |
 | `pyrecall forget` | Deactivate a skill |
+| `pyrecall packs` | List/install stack packs (fastapi, django, …) |
+| `pyrecall setup-host` | Write host rules, bridge JSON, AGENTS.md section |
+| `pyrecall workflow` | Print or write the before/after-edit checklist |
 | `pyrecall doctor` | Check PATH / store health |
 | `pyrecall playbook` | Write `SKILLS.md` from active skills |
 | `pyrecall stats` | Show store counts |
 | `pyrecall export` / `import-data` | Backup and restore JSON |
 | `pyrecall serve` | Run the stdio tool bridge |
+
+### Skill packs
+
+```bash
+pyrecall packs list
+pyrecall packs install fastapi
+pyrecall packs install django
+pyrecall packs install sqlalchemy
+pyrecall packs install ruff
+```
+
+### Keep memory fresh
+
+```bash
+# one-shot
+pyrecall index
+
+# poll and re-index on change (side terminal)
+pyrecall watch
+```
+
+### Sticky workflow for hosts
+
+```bash
+pyrecall setup-host        # HOST_RULES.md + bridge JSON + AGENTS.md
+pyrecall workflow          # print checklist
+pyrecall harvest           # import conventions from project docs
+```
+
+`setup-host` writes `.pyrecall/HOST_RULES.md` (required `get_context` before edits, `learn_correction` on user fixes) and ready-to-copy bridge configs with your project `cwd`.
 
 ## Stdio tool bridge
 
@@ -132,11 +170,13 @@ Ready-made files: [bridge.client.json](examples/bridge.client.json) · [bridge.m
 
 | Tool | Purpose |
 |------|---------|
-| `get_context` | Paste-ready conventions + skills for a task |
-| `search_memory` | Ranked search over memories and skills |
-| `learn_correction` | Turn “don’t do X, do Y” into a durable skill |
+| `get_context` | **Required before edits** — conventions + skills (+ why) |
+| `search_memory` | Ranked search; optional `tags` filter |
+| `learn_correction` | **Required on user corrections** — durable skill |
 | `add_memory` | Store a decision / convention / note |
 | `list_skills` | List active skills |
+| `install_pack` | Install fastapi / django / sqlalchemy / ruff pack |
+| `harvest_docs` | Import convention bullets from project docs |
 | `project_stats` | Store counts |
 
 ## How learning works
@@ -154,6 +194,11 @@ All ranking is local. There are no model downloads and no external APIs.
 .pyrecall/
   config.json
   store.db
+  WORKFLOW.md
+  HOST_RULES.md
+  bridge.mcp.json
+  bridge.client.json
+  bridge.python.json
   index/
 ```
 
@@ -169,6 +214,8 @@ Add `.pyrecall/store.db` to `.gitignore` if you do not want binary state in git.
 - context managers for I/O
 - no bare `except:`
 - pyproject-first configuration
+
+Optional packs add FastAPI, Django, SQLAlchemy, and ruff conventions via `pyrecall packs install …`.
 
 ## Development
 

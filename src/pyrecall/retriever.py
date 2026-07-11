@@ -54,21 +54,73 @@ def _kind_boost(kind: str, title: str, tags: list[str], query: str = "") -> floa
     return boost
 
 
+def _explain_why(
+    *,
+    kind: str,
+    title: str,
+    tags: list[str],
+    query: str,
+    query_tokens: list[str],
+    tokens: list[str],
+    score: float,
+) -> list[str]:
+    reasons: list[str] = []
+    token_set = set(tokens)
+    matched = [t for t in query_tokens if t in token_set]
+    if matched:
+        reasons.append(f"matched terms: {', '.join(matched[:5])}")
+
+    q_words = set(query_tokens)
+    q_lower = query.lower()
+    tag_hits = sorted(
+        {t for t in tags if t.lower() in q_words or t.lower() in q_lower}
+    )
+    if tag_hits:
+        reasons.append(f"tag overlap: {', '.join(tag_hits[:5])}")
+
+    if kind == "skill" and "correction" in tags:
+        reasons.append("learned correction skill")
+    elif kind == "skill":
+        reasons.append("active skill")
+    elif kind == "correction":
+        reasons.append("stored correction")
+    elif kind in {"decision", "convention"} and "indexed" not in tags:
+        reasons.append(f"project {kind}")
+    elif "indexed" in tags:
+        reasons.append("indexed project file")
+
+    if score >= 3:
+        reasons.append("strong rank score")
+    return reasons[:4]
+
+
+def _normalize_tags(tags: list[str] | None) -> set[str]:
+    if not tags:
+        return set()
+    return {t.strip().lower() for t in tags if t and t.strip()}
+
+
 def search(
     query: str,
     *,
     limit: int = 8,
     include_skills: bool = True,
     include_memories: bool = True,
+    tags: list[str] | None = None,
     root: Path | None = None,
 ) -> list[SearchHit]:
     project = find_project_root(root)
     store = Store(project)
     query_tokens = tokenize(query)
+    required_tags = _normalize_tags(tags)
     candidates: list[tuple[str, str, str, str, list[str], str | None, list[str]]] = []
 
     if include_memories:
         for memory in store.list_memories():
+            if required_tags and not required_tags.intersection(
+                {t.lower() for t in memory.tags}
+            ):
+                continue
             text = f"{memory.title}\n{memory.body}\n{' '.join(memory.tags)}"
             candidates.append(
                 (
@@ -84,6 +136,10 @@ def search(
 
     if include_skills:
         for skill in store.list_skills(active_only=True):
+            if required_tags and not required_tags.intersection(
+                {t.lower() for t in skill.tags}
+            ):
+                continue
             text = f"{skill.name}\n{skill.rule}\n{' '.join(skill.examples)}\n{' '.join(skill.tags)}"
             candidates.append(
                 (
@@ -105,12 +161,21 @@ def search(
     n_docs = len(docs)
 
     scored: list[SearchHit] = []
-    for item_id, kind, title, body, tokens, source_path, tags in candidates:
+    for item_id, kind, title, body, tokens, source_path, item_tags in candidates:
         score = bm25_score(query_tokens, tokens, avgdl, df, n_docs)
         score += overlap_boost(query, title, body)
-        score *= _kind_boost(kind, title, tags, query)
+        score *= _kind_boost(kind, title, item_tags, query)
         if score <= 0:
             continue
+        why = _explain_why(
+            kind=kind,
+            title=title,
+            tags=item_tags,
+            query=query,
+            query_tokens=query_tokens,
+            tokens=tokens,
+            score=score,
+        )
         scored.append(
             SearchHit(
                 id=item_id,
@@ -118,8 +183,9 @@ def search(
                 title=title,
                 body=body,
                 score=round(score, 4),
-                tags=tags,
+                tags=item_tags,
                 source_path=source_path,
+                why=why,
             )
         )
 
@@ -133,7 +199,12 @@ def search(
     return top
 
 
-def format_context(hits: list[SearchHit], *, max_chars: int = 3500) -> str:
+def format_context(
+    hits: list[SearchHit],
+    *,
+    max_chars: int = 3500,
+    show_why: bool = True,
+) -> str:
     if not hits:
         return "No matching project memory."
     parts: list[str] = []
@@ -145,6 +216,8 @@ def format_context(hits: list[SearchHit], *, max_chars: int = 3500) -> str:
             f"{body}\n"
             f"tags: {', '.join(hit.tags) if hit.tags else '-'}"
         )
+        if show_why and hit.why:
+            block += f"\nwhy: {'; '.join(hit.why)}"
         if used + len(block) > max_chars:
             break
         parts.append(block)

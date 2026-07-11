@@ -72,6 +72,7 @@ class SearchHit(BaseModel):
     score: float
     tags: list[str] = Field(default_factory=list)
     source_path: str | None = None
+    why: list[str] = Field(default_factory=list)
 
 
 class ProjectConfig(BaseModel):

@@ -12,14 +12,19 @@ from rich.table import Table
 from pyrecall import __version__
 from pyrecall.bridge import serve_stdio
 from pyrecall.doctor import run_doctor
+from pyrecall.harvest import harvest_docs
+from pyrecall.host_setup import setup_host
 from pyrecall.indexer import index_project
 from pyrecall.learner import learn_correction, parse_correction_blob
 from pyrecall.models import Memory, MemoryKind, ProjectConfig
+from pyrecall.packs import install_pack, list_packs
 from pyrecall.paths import ensure_store, find_project_root, load_config, save_config
 from pyrecall.playbook import write_skills_markdown
 from pyrecall.python_rules import seed_defaults
 from pyrecall.retriever import format_context, search
 from pyrecall.store import Store
+from pyrecall.watch import watch_loop
+from pyrecall.workflow import workflow_text, write_workflow
 
 app = typer.Typer(
     name="pyrecall",
@@ -70,7 +75,16 @@ def init_cmd(
         f"Seeded Python defaults — skills: {seeded['skills']}, "
         f"memories: {seeded['memories']}"
     )
-    console.print("Next: [bold]pyrecall index[/bold] then [bold]pyrecall recall \"...\"[/bold]")
+    host = setup_host(root, write_agents=True)
+    console.print(f"Wrote host rules {host['host_rules']}")
+    console.print(f"Wrote sticky workflow {host['workflow']}")
+    if host.get("agents"):
+        console.print(f"Updated {host['agents']}")
+    console.print(
+        "Next: [bold]pyrecall harvest[/bold] · "
+        "[bold]pyrecall index[/bold] · "
+        "[bold]pyrecall recall \"...\"[/bold]"
+    )
 
 
 @app.command("index")
@@ -146,19 +160,21 @@ def learn_cmd(
 def recall_cmd(
     query: str = typer.Argument(..., help="What to look up"),
     limit: int = typer.Option(8, "--limit", "-n"),
+    tag: list[str] = typer.Option([], "--tag", "-t", help="Require at least one of these tags"),
+    why: bool = typer.Option(True, "--why/--no-why", help="Show why each hit matched"),
     raw: bool = typer.Option(False, "--raw", help="Print JSON instead of context block"),
     path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Recall relevant memories and skills."""
     root = _root(path)
-    hits = search(query, limit=limit, root=root)
+    hits = search(query, limit=limit, tags=tag or None, root=root)
     if raw:
         console.print_json(json.dumps([h.model_dump() for h in hits], default=str))
         return
     if not hits:
         console.print("[yellow]No matches[/yellow]")
         return
-    console.print(format_context(hits))
+    console.print(format_context(hits, show_why=why))
 
 
 @app.command("skills")
@@ -282,6 +298,116 @@ def serve_cmd(
     root = _root(path)
     ensure_store(root)
     serve_stdio(root)
+
+
+packs_app = typer.Typer(help="Install optional skill packs (fastapi, django, …).")
+app.add_typer(packs_app, name="packs")
+
+
+@packs_app.command("list")
+def packs_list_cmd() -> None:
+    """List available skill packs."""
+    table = Table(title="Skill packs")
+    table.add_column("Name")
+    table.add_column("Skills", justify="right")
+    table.add_column("Memories", justify="right")
+    for pack in list_packs():
+        table.add_row(str(pack["name"]), str(pack["skills"]), str(pack["memories"]))
+    console.print(table)
+
+
+@packs_app.command("install")
+def packs_install_cmd(
+    name: str = typer.Argument(..., help="Pack name (fastapi|django|sqlalchemy|ruff)"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
+) -> None:
+    """Install a skill pack into the local store."""
+    root = _root(path)
+    ensure_store(root)
+    try:
+        result = install_pack(Store(root), name)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(
+        f"[green]Installed pack[/green] {name} — "
+        f"skills: {result['skills']}, memories: {result['memories']}"
+    )
+
+
+@app.command("watch")
+def watch_cmd(
+    path: Path | None = typer.Option(None, "--path", "-p"),
+    interval: float = typer.Option(2.0, "--interval", "-i", help="Poll interval seconds"),
+    once: bool = typer.Option(False, "--once", help="Index once and exit"),
+) -> None:
+    """Watch project files and re-index when they change."""
+    root = _root(path)
+    ensure_store(root)
+
+    def _report(event: dict[str, object]) -> None:
+        kind = event.get("event", "change")
+        console.print(
+            f"[green]{kind}[/green] indexed {event.get('memories', 0)} memories "
+            f"from {event.get('files', 0)} files"
+        )
+
+    console.print(f"Watching {root} (interval={interval}s). Ctrl+C to stop.")
+    try:
+        watch_loop(root, interval=interval, once=once, on_change=_report)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Stopped[/yellow]")
+
+
+@app.command("workflow")
+def workflow_cmd(
+    write: bool = typer.Option(
+        False, "--write", "-w", help="Write .pyrecall/WORKFLOW.md for hosts to follow"
+    ),
+    path: Path | None = typer.Option(None, "--path", "-p"),
+) -> None:
+    """Print or write the sticky before/after-edit workflow."""
+    if write:
+        target = write_workflow(_root(path))
+        console.print(f"[green]Wrote[/green] {target}")
+        return
+    console.print(workflow_text())
+
+
+@app.command("setup-host")
+def setup_host_cmd(
+    path: Path | None = typer.Option(None, "--path", "-p"),
+    no_agents: bool = typer.Option(
+        False, "--no-agents", help="Do not create/update AGENTS.md"
+    ),
+) -> None:
+    """Write host rules, bridge JSON, workflow, and AGENTS.md section."""
+    root = _root(path)
+    result = setup_host(root, write_agents=not no_agents)
+    console.print(f"[green]Host setup[/green] for {result['root']}")
+    console.print(f"  rules: {result['host_rules']}")
+    console.print(f"  workflow: {result['workflow']}")
+    for cfg in result["bridge_configs"]:  # type: ignore[union-attr]
+        console.print(f"  bridge: {cfg}")
+    if result.get("agents"):
+        console.print(f"  agents: {result['agents']}")
+    console.print("Copy a bridge JSON into your coding tool config, then restart the host.")
+
+
+@app.command("harvest")
+def harvest_cmd(
+    path: Path | None = typer.Option(None, "--path", "-p"),
+    keep: bool = typer.Option(
+        False, "--keep", help="Keep previous harvested entries instead of replacing"
+    ),
+) -> None:
+    """Turn README / CONTRIBUTING / AGENTS bullets into durable conventions."""
+    root = _root(path)
+    ensure_store(root)
+    result = harvest_docs(root, replace=not keep)
+    console.print(
+        f"[green]Harvested[/green] {result['memories']} memories "
+        f"from {result['files']} docs in {result['root']}"
+    )
 
 
 if __name__ == "__main__":

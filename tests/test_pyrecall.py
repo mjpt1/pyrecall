@@ -183,6 +183,7 @@ def test_bridge_tools(project: Path) -> None:
     names = {t["name"] for t in listed["result"]["tools"]}
     assert "search_memory" in names
     assert "learn_correction" in names
+    assert "install_pack" in names
 
     learned = server.handle(
         {
@@ -250,3 +251,93 @@ def test_cli_init_learn_recall(project: Path, monkeypatch: pytest.MonkeyPatch) -
     data = json.loads(out.read_text(encoding="utf-8"))
     assert "skills" in data
     assert "memories" in data
+
+
+def test_packs_install_and_tag_filter(project: Path) -> None:
+    from pyrecall.packs import install_pack, list_packs
+
+    names = {p["name"] for p in list_packs()}
+    assert names == {"django", "fastapi", "ruff", "sqlalchemy"}
+    result = install_pack(Store(project), "fastapi")
+    assert result["skills"] >= 1
+    hits = search("Depends for database session", root=project, tags=["fastapi"], limit=5)
+    assert hits
+    assert all("fastapi" in [t.lower() for t in h.tags] for h in hits)
+    assert any(h.why for h in hits)
+    block = format_context(hits)
+    assert "why:" in block.lower()
+
+
+def test_watch_once_and_workflow(project: Path) -> None:
+    from pyrecall.watch import watch_loop
+    from pyrecall.workflow import write_workflow
+
+    events: list[dict] = []
+    watch_loop(project, once=True, on_change=events.append)
+    assert events and events[0]["event"] == "start"
+    assert int(events[0]["memories"]) >= 1
+    path = write_workflow(project)
+    assert path.exists()
+    text = path.read_text(encoding="utf-8")
+    assert "get_context" in text
+    assert "learn_correction" in text
+
+
+def test_cli_packs_and_recall_why(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(project)
+    result = runner.invoke(app, ["packs", "install", "ruff"])
+    assert result.exit_code == 0, result.output
+    result = runner.invoke(app, ["recall", "ruff format", "--tag", "ruff"])
+    assert result.exit_code == 0, result.output
+    assert "why:" in result.output.lower()
+    result = runner.invoke(app, ["watch", "--once"])
+    assert result.exit_code == 0, result.output
+    result = runner.invoke(app, ["workflow", "--write"])
+    assert result.exit_code == 0, result.output
+
+
+def test_harvest_and_setup_host(project: Path) -> None:
+    from pyrecall.harvest import harvest_docs
+    from pyrecall.host_setup import setup_host
+
+    (project / "CONTRIBUTING.md").write_text(
+        "# Contributing\n\n## Testing\n"
+        "- Prefer pytest fixtures over setUp methods\n"
+        "- Keep unit tests free of network calls always\n\n"
+        "## Style\n"
+        "- Prefer pathlib for new filesystem paths in this repo\n",
+        encoding="utf-8",
+    )
+    result = harvest_docs(project)
+    assert int(result["memories"]) >= 2
+    memories = Store(project).list_memories()
+    harvested = [m for m in memories if "harvested" in m.tags]
+    assert harvested
+    assert any("pytest" in m.body.lower() for m in harvested)
+
+    setup = setup_host(project, write_agents=True)
+    assert Path(str(setup["host_rules"])).exists()
+    assert "get_context" in Path(str(setup["host_rules"])).read_text(encoding="utf-8")
+    assert Path(str(setup["bridge_configs"][0])).exists()
+    agents = project / "AGENTS.md"
+    assert agents.exists()
+    assert "pyrecall-host-rules" in agents.read_text(encoding="utf-8")
+
+    # second setup should not duplicate the AGENTS section
+    setup_host(project, write_agents=True)
+    text = agents.read_text(encoding="utf-8")
+    assert text.count("<!-- pyrecall-host-rules -->") == 1
+
+
+def test_cli_harvest_and_setup_host(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(project)
+    (project / "AGENTS.md").write_text(
+        "# Notes\n\n## Guidelines\n- Prefer explicit exception types in public APIs here\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(app, ["harvest"])
+    assert result.exit_code == 0, result.output
+    assert "Harvested" in result.output
+    result = runner.invoke(app, ["setup-host"])
+    assert result.exit_code == 0, result.output
+    assert (project / ".pyrecall" / "HOST_RULES.md").exists()

@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from pyrecall import __version__
+from pyrecall.harvest import harvest_docs
 from pyrecall.learner import learn_correction, parse_correction_blob
 from pyrecall.models import Memory, MemoryKind
+from pyrecall.packs import install_pack
 from pyrecall.paths import find_project_root
 from pyrecall.retriever import format_context, search
 from pyrecall.store import Store
@@ -28,6 +30,11 @@ TOOLS = [
             "properties": {
                 "query": {"type": "string", "description": "What you need to recall"},
                 "limit": {"type": "integer", "default": 8, "minimum": 1, "maximum": 20},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional tag filter (match any)",
+                },
             },
             "required": ["query"],
         },
@@ -35,14 +42,20 @@ TOOLS = [
     {
         "name": "get_context",
         "description": (
-            "Return a ready-to-use context block of project conventions and "
-            "correction-derived skills for the given task."
+            "REQUIRED before editing Python in this repository: return a ready-to-use "
+            "context block of project conventions and correction-derived skills for "
+            "the given task. Includes why each hit matched. Call this first."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "query": {"type": "string"},
                 "limit": {"type": "integer", "default": 6},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional tag filter (match any)",
+                },
             },
             "required": ["query"],
         },
@@ -72,8 +85,9 @@ TOOLS = [
     {
         "name": "learn_correction",
         "description": (
-            "Record a user correction and distill it into a reusable skill "
-            "so the same mistake is not repeated."
+            "REQUIRED when the user rejects an approach and states a preferred one: "
+            "record the correction and distill it into a reusable skill so the same "
+            "mistake is not repeated. Call this in the same turn as the correction."
         ),
         "inputSchema": {
             "type": "object",
@@ -102,6 +116,39 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "limit": {"type": "integer", "default": 50},
+            },
+        },
+    },
+    {
+        "name": "install_pack",
+        "description": (
+            "Install an optional skill pack: fastapi, django, sqlalchemy, or ruff."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "enum": ["fastapi", "django", "sqlalchemy", "ruff"],
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "harvest_docs",
+        "description": (
+            "Re-read README / CONTRIBUTING / AGENTS style docs and store convention "
+            "bullets as durable memories. Call after the user updates project docs."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "keep": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Keep previous harvested entries",
+                },
             },
         },
     },
@@ -167,21 +214,25 @@ class BridgeServer:
         name = params.get("name")
         arguments = params.get("arguments") or {}
         if name == "search_memory":
+            tags = arguments.get("tags") or None
             hits = search(
                 arguments["query"],
                 limit=int(arguments.get("limit") or 8),
+                tags=tags,
                 root=self.root,
             )
             payload = [h.model_dump() for h in hits]
             return self._text(json.dumps(payload, ensure_ascii=False, indent=2))
 
         if name == "get_context":
+            tags = arguments.get("tags") or None
             hits = search(
                 arguments["query"],
                 limit=int(arguments.get("limit") or 6),
+                tags=tags,
                 root=self.root,
             )
-            return self._text(format_context(hits))
+            return self._text(format_context(hits, show_why=True))
 
         if name == "add_memory":
             kind = MemoryKind(arguments.get("kind") or "note")
@@ -230,6 +281,16 @@ class BridgeServer:
                 for s in skills
             ]
             return self._text(json.dumps(payload, ensure_ascii=False, indent=2))
+
+        if name == "install_pack":
+            result = install_pack(Store(self.root), arguments["name"])
+            return self._text(
+                json.dumps({"pack": arguments["name"], **result}, ensure_ascii=False)
+            )
+
+        if name == "harvest_docs":
+            result = harvest_docs(self.root, replace=not bool(arguments.get("keep")))
+            return self._text(json.dumps(result, ensure_ascii=False, indent=2))
 
         if name == "project_stats":
             return self._text(json.dumps(Store(self.root).stats(), indent=2))
