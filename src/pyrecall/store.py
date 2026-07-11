@@ -243,6 +243,13 @@ class Store:
             ).fetchone()
         return self._row_to_skill(row) if row else None
 
+    def set_skill_active(self, name_or_id: str, active: bool = True) -> Skill | None:
+        skill = self.get_skill(name_or_id) or self.find_skill_by_name(name_or_id)
+        if skill is None:
+            return None
+        skill.active = active
+        return self.upsert_skill(skill)
+
     def stats(self) -> dict[str, Any]:
         with self.connect() as conn:
             memories = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]

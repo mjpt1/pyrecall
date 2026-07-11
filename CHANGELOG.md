@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-11
+
+### Added
+
+- `pyrecall doctor` — diagnose PATH, Python, and `.pyrecall/` store health (Windows-friendly hints)
+- `pyrecall forget` — deactivate a skill so it stops appearing in recall
+- Config summarizer for `pyproject.toml` / ini-style files (keeps high-signal sections only)
+- Smarter correction parsing (`don't use X, use Y`, `use Y instead of X`)
+- Auto topic tags on learned skills (pytest, pathlib, typing, packaging, …)
+
+### Changed
+
+- Recall ranking demotes bulky auto-indexed dumps so skills/corrections surface first
+- Recall output truncates long indexed bodies for readable context blocks
+- Docs/index bodies are capped more tightly
+
+### Notes
+
+- PyPI distribution name remains `pyrecall-cli`; import and CLI remain `pyrecall`
+
 ## [0.1.0] - 2026-07-10
 
 ### Added
@@ -24,4 +44,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - PyPI distribution name is `pyrecall-cli` (because `pyrecall` / `py-recall` collide with an existing project); import and CLI remain `pyrecall`
 
+[0.2.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.1.0

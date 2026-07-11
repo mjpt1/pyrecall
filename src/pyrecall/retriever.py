@@ -7,6 +7,7 @@ from pathlib import Path
 from pyrecall.models import SearchHit
 from pyrecall.paths import find_project_root
 from pyrecall.store import Store
+from pyrecall.summarize import display_body
 from pyrecall.textutil import bm25_score, overlap_boost, tokenize
 
 
@@ -19,6 +20,38 @@ def _doc_stats(docs: list[tuple[str, list[str]]]) -> tuple[float, dict[str, int]
         for term in set(tokens):
             df[term] = df.get(term, 0) + 1
     return avgdl, df
+
+
+def _kind_boost(kind: str, title: str, tags: list[str], query: str = "") -> float:
+    q = (query or "").lower()
+    guidance_query = any(w in q for w in ("how", "should", "prefer", "write", "use"))
+
+    if kind == "skill" and "correction" in tags:
+        boost = 2.0
+    elif kind == "skill":
+        boost = 1.6
+    elif kind == "correction":
+        boost = 1.8
+    elif kind == "decision":
+        boost = 1.15
+    elif kind == "convention" and "indexed" not in tags:
+        boost = 1.1
+    elif "indexed" in tags and title.startswith("Config:"):
+        boost = 0.35
+    elif "indexed" in tags and title.startswith("Module:") and "testing" in tags:
+        boost = 0.3
+    elif "indexed" in tags and title.startswith(("Module:", "File:")):
+        boost = 0.5
+    elif "indexed" in tags and title.startswith("Doc:"):
+        boost = 0.7
+    else:
+        boost = 1.0
+
+    if guidance_query and kind in {"skill", "correction"}:
+        boost *= 1.25
+    if guidance_query and "indexed" in tags:
+        boost *= 0.75
+    return boost
 
 
 def search(
@@ -75,10 +108,7 @@ def search(
     for item_id, kind, title, body, tokens, source_path, tags in candidates:
         score = bm25_score(query_tokens, tokens, avgdl, df, n_docs)
         score += overlap_boost(query, title, body)
-        if kind == "skill":
-            score *= 1.15
-        if kind == "correction":
-            score *= 1.2
+        score *= _kind_boost(kind, title, tags, query)
         if score <= 0:
             continue
         scored.append(
@@ -96,7 +126,6 @@ def search(
     scored.sort(key=lambda h: h.score, reverse=True)
     top = scored[: max(1, limit)]
 
-    # Track skill usefulness
     for hit in top:
         if hit.kind == "skill":
             store.bump_skill(hit.id)
@@ -104,15 +133,16 @@ def search(
     return top
 
 
-def format_context(hits: list[SearchHit], *, max_chars: int = 4000) -> str:
+def format_context(hits: list[SearchHit], *, max_chars: int = 3500) -> str:
     if not hits:
         return "No matching project memory."
     parts: list[str] = []
     used = 0
     for i, hit in enumerate(hits, 1):
+        body = display_body(hit.kind, hit.title, hit.body, hit.tags)
         block = (
             f"[{i}] ({hit.kind}) {hit.title}\n"
-            f"{hit.body.strip()}\n"
+            f"{body}\n"
             f"tags: {', '.join(hit.tags) if hit.tags else '-'}"
         )
         if used + len(block) > max_chars:

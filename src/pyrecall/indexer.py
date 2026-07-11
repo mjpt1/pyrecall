@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 from pyrecall.models import Memory, MemoryKind, ProjectConfig
 from pyrecall.paths import find_project_root, load_config
 from pyrecall.store import Store
+from pyrecall.summarize import summarize_config_text
 from pyrecall.textutil import snippet
 
 DOC_NAMES = {
@@ -80,11 +81,11 @@ def _memory_from_file(root: Path, path: Path) -> Memory | None:
     if name in DOC_NAMES or suffix in {".md", ".rst"}:
         kind = MemoryKind.DOC
         title = f"Doc: {rel}"
-        body = text[:8000]
+        body = snippet(text, 2500)
     elif name in {"pyproject.toml", "setup.cfg", "tox.ini"}:
         kind = MemoryKind.CONVENTION
         title = f"Config: {rel}"
-        body = text[:8000]
+        body = summarize_config_text(text, limit=1400)
     elif suffix == ".py":
         kind = MemoryKind.NOTE
         title = f"Module: {rel}"
@@ -107,7 +108,7 @@ def _memory_from_file(root: Path, path: Path) -> Memory | None:
     else:
         kind = MemoryKind.NOTE
         title = f"File: {rel}"
-        body = snippet(text, 2000)
+        body = snippet(text, 1500)
 
     tags = ["indexed", "python"] if suffix == ".py" else ["indexed"]
     if "test" in rel:

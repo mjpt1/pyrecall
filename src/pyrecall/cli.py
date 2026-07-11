@@ -11,6 +11,7 @@ from rich.table import Table
 
 from pyrecall import __version__
 from pyrecall.bridge import serve_stdio
+from pyrecall.doctor import run_doctor
 from pyrecall.indexer import index_project
 from pyrecall.learner import learn_correction, parse_correction_blob
 from pyrecall.models import Memory, MemoryKind, ProjectConfig
@@ -181,6 +182,28 @@ def skills_cmd(
             skill.rule.replace("\n", " ")[:80],
         )
     console.print(table)
+
+
+@app.command("forget")
+def forget_cmd(
+    name: str = typer.Argument(..., help="Skill name or id to deactivate"),
+    path: Path | None = typer.Option(None, "--path", "-p"),
+) -> None:
+    """Deactivate a skill so it no longer appears in recall."""
+    root = _root(path)
+    skill = Store(root).set_skill_active(name, active=False)
+    if skill is None:
+        raise typer.BadParameter(f"Skill not found: {name}")
+    console.print(f"[yellow]Deactivated[/yellow] {skill.name}")
+
+
+@app.command("doctor")
+def doctor_cmd(path: Path | None = typer.Option(None, "--path", "-p")) -> None:
+    """Check install PATH, Python, and local store health."""
+    report = run_doctor(_root(path) if path else None)
+    console.print_json(json.dumps(report, ensure_ascii=False, indent=2))
+    for tip in report["advice"]:
+        console.print(f"• {tip}")
 
 
 @app.command("stats")

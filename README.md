@@ -35,6 +35,15 @@ pip install pyrecall-cli
 
 This installs the `pyrecall` command and the `pyrecall` Python package.
 
+If `pyrecall` is not found on Windows after install:
+
+```powershell
+python -m pyrecall doctor
+python -m pyrecall --help
+```
+
+Or add your user Scripts folder to PATH, then open a **new** terminal.
+
 For local development:
 
 ```bash
@@ -71,6 +80,8 @@ pyrecall learn --blob "avoid: bare except | prefer: except ValueError as exc"
 | `pyrecall learn` | Distill a correction into a skill |
 | `pyrecall recall` | Search memories and skills |
 | `pyrecall skills` | List learned skills |
+| `pyrecall forget` | Deactivate a skill |
+| `pyrecall doctor` | Check PATH / store health |
 | `pyrecall playbook` | Write `SKILLS.md` from active skills |
 | `pyrecall stats` | Show store counts |
 | `pyrecall export` / `import-data` | Backup and restore JSON |

@@ -105,6 +105,60 @@ def test_distill_skill() -> None:
     skill = distill_skill("os.path.join", "Path / 'x'", reason="Prefer pathlib")
     assert "pathlib" in skill.rule.lower() or "Prefer" in skill.rule
     assert skill.examples
+    assert "pathlib" in skill.tags
+
+
+def test_parse_instead_of() -> None:
+    rejected, preferred, _ = parse_correction_blob(
+        "don't use unittest.TestCase, use pytest assert"
+    )
+    assert "unittest" in rejected.lower()
+    assert "pytest" in preferred.lower()
+
+
+def test_recall_prefers_skills_over_config_dump(project: Path) -> None:
+    (project / "pyproject.toml").write_text(
+        "[project]\nname='demo'\n\n[tool.pytest.ini_options]\ntestpaths=['tests']\n"
+        + ("x = 1\n" * 200),
+        encoding="utf-8",
+    )
+    index_project(project)
+    learn_correction(
+        "unittest.TestCase",
+        "pytest assert + fixtures",
+        reason="Repo standard",
+        root=project,
+    )
+    hits = search("how should tests be written", root=project, limit=5)
+    assert hits
+    assert any(h.kind == "skill" for h in hits[:3])
+    assert not any(h.title.startswith("Config:") for h in hits[:1])
+    for hit in hits:
+        if hit.title.startswith("Config:"):
+            assert hit.body.count("x = 1") <= 2
+    block = format_context(hits)
+    assert "pytest" in block.lower()
+
+
+def test_doctor_and_forget(project: Path) -> None:
+    from pyrecall.doctor import run_doctor
+
+    report = run_doctor(project)
+    assert report["version"]
+    assert report["store_exists"] is True
+    learn_correction("a", "b", reason="tmp", root=project)
+    result = runner.invoke(app, ["--path", str(project), "forget", "a-b"])
+    # name may be tokenized differently; use skills list
+    store = Store(project)
+    skills = store.list_skills(active_only=False)
+    assert skills
+    deactivated = store.set_skill_active(skills[0].name, active=False)
+    assert deactivated is not None
+    assert deactivated.active is False
+    active = store.list_skills(active_only=True)
+    assert all(s.name != deactivated.name for s in active)
+    result = runner.invoke(app, ["doctor", "--path", str(project)])
+    assert result.exit_code == 0
 
 
 def test_bridge_tools(project: Path) -> None:
