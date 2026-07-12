@@ -6,7 +6,7 @@
 Local project memory and correction learning for Python workflows.
 
 <p align="center">
-  <img src="docs/demo.png" alt="PyRecall demo: init, learn a correction, recall the skill" width="920" />
+  <img src="docs/demo.svg" alt="PyRecall animated demo: harvest, learn from diff, recall with why" width="920" />
 </p>
 
 PyRecall keeps durable notes about your repository, turns corrections into reusable skills, and serves them back through a CLI or a stdio tool bridge that compatible coding tools can call.
@@ -23,7 +23,7 @@ bash examples/demo.sh
 ./examples/demo.ps1
 ```
 
-Recording tips: [docs/DEMO.md](docs/DEMO.md)
+Recording tips: [docs/DEMO.md](docs/DEMO.md). Animated preview: [docs/demo.svg](docs/demo.svg).
 
 ## Why
 
@@ -82,8 +82,9 @@ pyrecall learn --blob "avoid: bare except | prefer: except ValueError as exc"
 | `pyrecall index` | Index docs and Python module signals |
 | `pyrecall watch` | Re-index when docs/config/Python files change |
 | `pyrecall remember` | Store a decision / convention / note |
-| `pyrecall learn` | Distill a correction into a skill |
-| `pyrecall recall` | Search memories and skills (`--tag`, `--why`) |
+| `pyrecall learn` | Distill a correction (`--blob`, `--diff`) |
+| `pyrecall recall` | Search (`--tag`, `--under`, `--why`) |
+| `pyrecall consolidate` | Merge near-duplicate correction skills |
 | `pyrecall skills` | List learned skills |
 | `pyrecall forget` | Deactivate a skill |
 | `pyrecall packs` | List/install stack packs (fastapi, django, …) |
@@ -103,6 +104,28 @@ pyrecall packs install fastapi
 pyrecall packs install django
 pyrecall packs install sqlalchemy
 pyrecall packs install ruff
+pyrecall packs install uv
+pyrecall packs install mypy
+pyrecall packs install celery
+pyrecall packs install pytest-asyncio
+```
+
+### Learn from a patch
+
+```bash
+pyrecall learn --diff path/to/fix.patch
+```
+
+### Scoped recall
+
+```bash
+pyrecall recall "error handling" --under src/api
+```
+
+### Consolidate duplicates
+
+```bash
+pyrecall consolidate
 ```
 
 ### Keep memory fresh

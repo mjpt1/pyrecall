@@ -112,6 +112,80 @@ PACK_SKILLS: dict[str, list[Skill]] = {
             tags=["python", "sqlalchemy"],
         ),
     ],
+    "uv": [
+        Skill(
+            name="uv-over-pip-install",
+            rule=(
+                "Prefer uv for installing and locking dependencies in this project "
+                "when uv is available (uv sync / uv run) instead of ad-hoc pip installs."
+            ),
+            examples=["uv sync", "uv run pytest"],
+            tags=["python", "uv", "packaging"],
+        ),
+        Skill(
+            name="uv-lockfile",
+            rule="Commit the uv lockfile and install from it in CI for reproducible builds.",
+            examples=["uv lock", "uv sync --frozen"],
+            tags=["python", "uv", "packaging"],
+        ),
+    ],
+    "poetry": [
+        Skill(
+            name="poetry-pyproject",
+            rule=(
+                "Manage dependencies with Poetry via pyproject.toml. Prefer "
+                "`poetry add` / `poetry lock` over editing dependency lists by hand."
+            ),
+            examples=["poetry add httpx", "poetry install"],
+            tags=["python", "poetry", "packaging"],
+        ),
+    ],
+    "mypy": [
+        Skill(
+            name="mypy-public-api",
+            rule=(
+                "Keep public APIs mypy-clean. Prefer explicit Optional/| None and "
+                "avoid bare Any on exported functions."
+            ),
+            examples=["def load(path: Path) -> dict[str, str]:"],
+            tags=["python", "mypy", "typing"],
+        ),
+        Skill(
+            name="pyright-compatible-hints",
+            rule=(
+                "Write type hints that satisfy both mypy and pyright: built-in generics "
+                "on 3.10+, no type comments in new code."
+            ),
+            examples=["items: list[str] = []"],
+            tags=["python", "mypy", "pyright", "typing"],
+        ),
+    ],
+    "celery": [
+        Skill(
+            name="celery-task-idempotent",
+            rule=(
+                "Celery tasks should be idempotent where possible. Pass IDs/args, not "
+                "ORM objects; retry with explicit backoff on transient failures."
+            ),
+            examples=[
+                "@app.task(bind=True, max_retries=3)\n"
+                "def send_mail(self, user_id: int): ..."
+            ],
+            tags=["python", "celery", "async"],
+        ),
+    ],
+    "pytest-asyncio": [
+        Skill(
+            name="pytest-asyncio-mode",
+            rule=(
+                "For async tests use pytest-asyncio with asyncio_mode=auto (or mark "
+                "async tests explicitly). Avoid mixing sync TestClient with async routes "
+                "without an async client."
+            ),
+            examples=["@pytest.mark.asyncio\nasync def test_ok():\n    assert await ping()"],
+            tags=["python", "pytest", "asyncio", "testing"],
+        ),
+    ],
 }
 
 PACK_MEMORIES: dict[str, list[Memory]] = {
@@ -154,6 +228,46 @@ PACK_MEMORIES: dict[str, list[Memory]] = {
                 "rollback on exceptions."
             ),
             tags=["python", "sqlalchemy", "pack"],
+        )
+    ],
+    "uv": [
+        Memory(
+            kind=MemoryKind.CONVENTION,
+            title="uv toolchain",
+            body="Prefer uv sync/run for local and CI installs when this pack is enabled.",
+            tags=["python", "uv", "pack"],
+        )
+    ],
+    "poetry": [
+        Memory(
+            kind=MemoryKind.CONVENTION,
+            title="Poetry dependency management",
+            body="Dependencies and scripts live in pyproject.toml under Poetry conventions.",
+            tags=["python", "poetry", "pack"],
+        )
+    ],
+    "mypy": [
+        Memory(
+            kind=MemoryKind.CONVENTION,
+            title="Static typing baseline",
+            body="Public APIs should pass mypy/pyright; tighten types instead of silencing.",
+            tags=["python", "mypy", "pack"],
+        )
+    ],
+    "celery": [
+        Memory(
+            kind=MemoryKind.CONVENTION,
+            title="Celery task style",
+            body="Background work goes through Celery tasks with serializable arguments.",
+            tags=["python", "celery", "pack"],
+        )
+    ],
+    "pytest-asyncio": [
+        Memory(
+            kind=MemoryKind.CONVENTION,
+            title="Async test style",
+            body="Async tests use pytest-asyncio markers/mode consistent with the repo.",
+            tags=["python", "pytest", "asyncio", "pack"],
         )
     ],
 }

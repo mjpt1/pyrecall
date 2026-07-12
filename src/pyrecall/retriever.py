@@ -107,12 +107,14 @@ def search(
     include_skills: bool = True,
     include_memories: bool = True,
     tags: list[str] | None = None,
+    under: str | None = None,
     root: Path | None = None,
 ) -> list[SearchHit]:
     project = find_project_root(root)
     store = Store(project)
     query_tokens = tokenize(query)
     required_tags = _normalize_tags(tags)
+    scope = (under or "").replace("\\", "/").strip().lstrip("./")
     candidates: list[tuple[str, str, str, str, list[str], str | None, list[str]]] = []
 
     if include_memories:
@@ -121,6 +123,20 @@ def search(
                 {t.lower() for t in memory.tags}
             ):
                 continue
+            if scope:
+                src = (memory.source_path or "").replace("\\", "/")
+                scope_l = scope.lower()
+                in_path = bool(src) and (
+                    src == scope
+                    or src.startswith(scope.rstrip("/") + "/")
+                    or src.startswith(scope)
+                )
+                mentions = scope_l in memory.title.lower() or scope_l in memory.body.lower()
+                if "indexed" in memory.tags or "harvested" in memory.tags:
+                    if not (in_path or mentions):
+                        continue
+                elif src and not (in_path or mentions):
+                    continue
             text = f"{memory.title}\n{memory.body}\n{' '.join(memory.tags)}"
             candidates.append(
                 (
@@ -140,7 +156,13 @@ def search(
                 {t.lower() for t in skill.tags}
             ):
                 continue
+            if scope:
+                # Keep skills always when scoped: they are project-wide guidance.
+                # Boost later via path tokens in query if needed.
+                pass
             text = f"{skill.name}\n{skill.rule}\n{' '.join(skill.examples)}\n{' '.join(skill.tags)}"
+            if scope:
+                text = f"{text}\n{scope}"
             candidates.append(
                 (
                     skill.id,

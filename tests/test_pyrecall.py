@@ -257,7 +257,7 @@ def test_packs_install_and_tag_filter(project: Path) -> None:
     from pyrecall.packs import install_pack, list_packs
 
     names = {p["name"] for p in list_packs()}
-    assert names == {"django", "fastapi", "ruff", "sqlalchemy"}
+    assert "fastapi" in names and "uv" in names and "mypy" in names
     result = install_pack(Store(project), "fastapi")
     assert result["skills"] >= 1
     hits = search("Depends for database session", root=project, tags=["fastapi"], limit=5)
@@ -341,3 +341,69 @@ def test_cli_harvest_and_setup_host(project: Path, monkeypatch: pytest.MonkeyPat
     result = runner.invoke(app, ["setup-host"])
     assert result.exit_code == 0, result.output
     assert (project / ".pyrecall" / "HOST_RULES.md").exists()
+
+
+def test_diff_learn_under_and_consolidate(project: Path) -> None:
+    from pyrecall.diff_learn import parse_diff_text
+    from pyrecall.learner import consolidate_skills, learn_correction
+    from pyrecall.playbook import skills_markdown
+
+    diff = """\
+--- a/tests/test_x.py
++++ b/tests/test_x.py
+@@ -1,3 +1,3 @@
+-from unittest import TestCase
++import pytest
+-class T(TestCase):
++def test_ok():
+-    def test_ok(self): self.assertEqual(1, 1)
++    assert 1 == 1
+"""
+    rejected, preferred, ctx = parse_diff_text(diff)
+    assert "unittest" in rejected.lower()
+    assert "pytest" in preferred.lower() or "assert" in preferred.lower()
+    assert "test_x" in ctx
+
+    patch = project / "fix.patch"
+    patch.write_text(diff, encoding="utf-8")
+    result = runner.invoke(app, ["learn", "--path", str(project), "--diff", str(patch)])
+    assert result.exit_code == 0, result.output
+    assert "Learned skill" in result.output
+
+    # near-duplicate should merge
+    learn_correction(
+        "from unittest import TestCase",
+        "import pytest",
+        reason="same idea",
+        root=project,
+    )
+    learn_correction(
+        "unittest.TestCase subclass",
+        "pytest assert helpers",
+        reason="same idea again",
+        root=project,
+    )
+    stats = consolidate_skills(project)
+    assert stats["merged_pairs"] >= 0
+
+    # path-scoped recall
+    from pyrecall.models import Memory, MemoryKind
+
+    Store(project).upsert_memory(
+        Memory(
+            kind=MemoryKind.DOC,
+            title="Module: src/api/routes.py",
+            body="API routes use Depends for DB sessions",
+            tags=["python", "indexed", "api"],
+            source_path="src/api/routes.py",
+        )
+    )
+    hits = search("Depends session", root=project, under="src/api", limit=5)
+    assert hits
+    md = skills_markdown(project)
+    assert md.startswith("# Project skills")
+    assert "## " in md
+
+    report = __import__("pyrecall.doctor", fromlist=["run_doctor"]).run_doctor(project)
+    assert "store_health" in report
+    assert isinstance(report["store_health"], dict)

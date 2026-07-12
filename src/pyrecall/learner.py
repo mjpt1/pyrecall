@@ -80,6 +80,82 @@ def distill_skill(
     return Skill(name=name, rule=rule, examples=examples, tags=tags)
 
 
+def _similarity(a: str, b: str) -> float:
+    ta = set(tokenize(a))
+    tb = set(tokenize(b))
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+def find_merge_target(store: Store, skill: Skill) -> Skill | None:
+    """Find an existing skill that should absorb this one."""
+    existing = store.find_skill_by_name(skill.name)
+    if existing is not None:
+        return existing
+
+    best: Skill | None = None
+    best_score = 0.0
+    for candidate in store.list_skills(active_only=False):
+        if "correction" not in candidate.tags and "correction" not in skill.tags:
+            # still allow merge when names/rules are very close
+            pass
+        name_score = _similarity(candidate.name, skill.name)
+        rule_score = _similarity(candidate.rule, skill.rule)
+        score = max(name_score, rule_score * 0.9)
+        shared_name = set(tokenize(candidate.name)) & set(tokenize(skill.name))
+        if len(shared_name) >= 2:
+            score = max(score, 0.55)
+        if score > best_score:
+            best_score = score
+            best = candidate
+    if best is not None and best_score >= 0.45:
+        return best
+    return None
+
+
+def merge_skill_into(existing: Skill, incoming: Skill, store: Store) -> Skill:
+    if len(incoming.rule) > len(existing.rule):
+        existing.rule = incoming.rule
+    existing.examples = list(dict.fromkeys([*existing.examples, *incoming.examples]))
+    existing.tags = list(dict.fromkeys([*existing.tags, *incoming.tags]))
+    existing.active = True
+    existing.hit_count = max(existing.hit_count, 0) + 1
+    return store.upsert_skill(existing)
+
+
+def consolidate_skills(root: Path | None = None) -> dict[str, int]:
+    """Merge near-duplicate active correction skills. Returns counts."""
+    project = find_project_root(root)
+    store = Store(project)
+    skills = [s for s in store.list_skills(active_only=True) if "correction" in s.tags]
+    merged = 0
+    deactivated = 0
+    used: set[str] = set()
+    for i, skill in enumerate(skills):
+        if skill.id in used:
+            continue
+        for other in skills[i + 1 :]:
+            if other.id in used:
+                continue
+            score = max(
+                _similarity(skill.name, other.name),
+                _similarity(skill.rule, other.rule) * 0.9,
+            )
+            if score < 0.5:
+                continue
+            # Keep the one with more hits / longer rule
+            keep, drop = (skill, other) if skill.hit_count >= other.hit_count else (other, skill)
+            merge_skill_into(keep, drop, store)
+            store.set_skill_active(drop.name, active=False)
+            used.add(drop.id)
+            used.add(keep.id)
+            merged += 1
+            deactivated += 1
+            skill = keep
+    return {"merged_pairs": merged, "deactivated": deactivated}
+
+
 def learn_correction(
     rejected: str,
     preferred: str,
@@ -99,23 +175,11 @@ def learn_correction(
         reason=reason,
         tags=tags,
     )
-    existing = store.find_skill_by_name(skill.name)
-    if existing is None:
-        # Merge into a close existing correction skill when names drift slightly
-        for candidate in store.list_skills(active_only=False):
-            if "correction" not in candidate.tags:
-                continue
-            shared = set(tokenize(candidate.name)) & set(tokenize(skill.name))
-            if len(shared) >= 2:
-                existing = candidate
-                break
-
+    existing = find_merge_target(store, skill)
+    merged = False
     if existing:
-        existing.rule = skill.rule
-        existing.examples = list(dict.fromkeys([*existing.examples, *skill.examples]))
-        existing.tags = list(dict.fromkeys([*existing.tags, *skill.tags]))
-        existing.active = True
-        skill = store.upsert_skill(existing)
+        skill = merge_skill_into(existing, skill, store)
+        merged = True
     else:
         skill = store.upsert_skill(skill)
 
@@ -144,6 +208,7 @@ def learn_correction(
         "skill_name": skill.name,
         "rule": skill.rule,
         "tags": skill.tags,
+        "merged": merged,
     }
 
 

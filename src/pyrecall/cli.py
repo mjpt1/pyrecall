@@ -11,11 +11,12 @@ from rich.table import Table
 
 from pyrecall import __version__
 from pyrecall.bridge import serve_stdio
+from pyrecall.diff_learn import parse_diff_file
 from pyrecall.doctor import run_doctor
 from pyrecall.harvest import harvest_docs
 from pyrecall.host_setup import setup_host
 from pyrecall.indexer import index_project
-from pyrecall.learner import learn_correction, parse_correction_blob
+from pyrecall.learner import consolidate_skills, learn_correction, parse_correction_blob
 from pyrecall.models import Memory, MemoryKind, ProjectConfig
 from pyrecall.packs import install_pack, list_packs
 from pyrecall.paths import ensure_store, find_project_root, load_config, save_config
@@ -129,6 +130,14 @@ def learn_cmd(
         "-b",
         help="Free-form: 'avoid => prefer' or 'avoid: x | prefer: y'",
     ),
+    diff: Path | None = typer.Option(
+        None,
+        "--diff",
+        "-d",
+        help="Unified diff/patch file (removed => rejected, added => preferred)",
+        exists=True,
+        readable=True,
+    ),
     context: str = typer.Option("", "--context", "-c"),
     reason: str = typer.Option("", "--reason"),
     path: Path | None = typer.Option(None, "--path", "-p"),
@@ -138,21 +147,29 @@ def learn_cmd(
     rej = rejected or ""
     pref = preferred or ""
     why = reason
+    ctx = context
+    if diff is not None:
+        parsed_r, parsed_p, parsed_ctx = parse_diff_file(diff)
+        rej = rej or parsed_r
+        pref = pref or parsed_p
+        ctx = ctx or parsed_ctx
+        why = why or "Learned from diff"
     if blob:
         parsed_r, parsed_p, parsed_reason = parse_correction_blob(blob)
         rej = rej or parsed_r
         pref = pref or parsed_p
         why = why or parsed_reason
     if not pref:
-        raise typer.BadParameter("Provide --preferred or --blob")
+        raise typer.BadParameter("Provide --preferred, --blob, or --diff")
     result = learn_correction(
         rej or "(unspecified)",
         pref,
-        context=context,
+        context=ctx,
         reason=why,
         root=root,
     )
-    console.print(f"[green]Learned skill[/green] {result['skill_name']}")
+    merged = " (merged into existing skill)" if result.get("merged") else ""
+    console.print(f"[green]Learned skill[/green] {result['skill_name']}{merged}")
     console.print(result["rule"])
 
 
@@ -161,13 +178,19 @@ def recall_cmd(
     query: str = typer.Argument(..., help="What to look up"),
     limit: int = typer.Option(8, "--limit", "-n"),
     tag: list[str] = typer.Option([], "--tag", "-t", help="Require at least one of these tags"),
+    under: str | None = typer.Option(
+        None,
+        "--under",
+        "-u",
+        help="Prefer memories under this path (e.g. src/api)",
+    ),
     why: bool = typer.Option(True, "--why/--no-why", help="Show why each hit matched"),
     raw: bool = typer.Option(False, "--raw", help="Print JSON instead of context block"),
     path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Recall relevant memories and skills."""
     root = _root(path)
-    hits = search(query, limit=limit, tags=tag or None, root=root)
+    hits = search(query, limit=limit, tags=tag or None, under=under, root=root)
     if raw:
         console.print_json(json.dumps([h.model_dump() for h in hits], default=str))
         return
@@ -211,6 +234,17 @@ def forget_cmd(
     if skill is None:
         raise typer.BadParameter(f"Skill not found: {name}")
     console.print(f"[yellow]Deactivated[/yellow] {skill.name}")
+
+
+@app.command("consolidate")
+def consolidate_cmd(path: Path | None = typer.Option(None, "--path", "-p")) -> None:
+    """Merge near-duplicate correction skills."""
+    root = _root(path)
+    result = consolidate_skills(root)
+    console.print(
+        f"[green]Consolidated[/green] pairs={result['merged_pairs']} "
+        f"deactivated={result['deactivated']}"
+    )
 
 
 @app.command("doctor")
@@ -318,7 +352,9 @@ def packs_list_cmd() -> None:
 
 @packs_app.command("install")
 def packs_install_cmd(
-    name: str = typer.Argument(..., help="Pack name (fastapi|django|sqlalchemy|ruff)"),
+    name: str = typer.Argument(
+        ..., help="Pack name (fastapi|django|sqlalchemy|ruff|uv|poetry|mypy|celery|pytest-asyncio)"
+    ),
     path: Path | None = typer.Option(None, "--path", "-p"),
 ) -> None:
     """Install a skill pack into the local store."""

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from pyrecall import __version__
+from pyrecall.diff_learn import parse_diff_text
 from pyrecall.harvest import harvest_docs
 from pyrecall.learner import learn_correction, parse_correction_blob
 from pyrecall.models import Memory, MemoryKind
@@ -35,6 +36,10 @@ TOOLS = [
                     "items": {"type": "string"},
                     "description": "Optional tag filter (match any)",
                 },
+                "under": {
+                    "type": "string",
+                    "description": "Optional path scope, e.g. src/api",
+                },
             },
             "required": ["query"],
         },
@@ -55,6 +60,10 @@ TOOLS = [
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Optional tag filter (match any)",
+                },
+                "under": {
+                    "type": "string",
+                    "description": "Optional path scope, e.g. src/api",
                 },
             },
             "required": ["query"],
@@ -106,6 +115,10 @@ TOOLS = [
                     "type": "string",
                     "description": "Optional free-form 'avoid => prefer' text",
                 },
+                "diff": {
+                    "type": "string",
+                    "description": "Optional unified diff text (removed=rejected, added=preferred)",
+                },
             },
         },
     },
@@ -129,7 +142,17 @@ TOOLS = [
             "properties": {
                 "name": {
                     "type": "string",
-                    "enum": ["fastapi", "django", "sqlalchemy", "ruff"],
+                    "enum": [
+                        "fastapi",
+                        "django",
+                        "sqlalchemy",
+                        "ruff",
+                        "uv",
+                        "poetry",
+                        "mypy",
+                        "celery",
+                        "pytest-asyncio",
+                    ],
                 },
             },
             "required": ["name"],
@@ -215,10 +238,12 @@ class BridgeServer:
         arguments = params.get("arguments") or {}
         if name == "search_memory":
             tags = arguments.get("tags") or None
+            under = arguments.get("under") or None
             hits = search(
                 arguments["query"],
                 limit=int(arguments.get("limit") or 8),
                 tags=tags,
+                under=under,
                 root=self.root,
             )
             payload = [h.model_dump() for h in hits]
@@ -226,10 +251,12 @@ class BridgeServer:
 
         if name == "get_context":
             tags = arguments.get("tags") or None
+            under = arguments.get("under") or None
             hits = search(
                 arguments["query"],
                 limit=int(arguments.get("limit") or 6),
                 tags=tags,
+                under=under,
                 root=self.root,
             )
             return self._text(format_context(hits, show_why=True))
@@ -251,13 +278,20 @@ class BridgeServer:
             context = arguments.get("context") or ""
             reason = arguments.get("reason") or ""
             blob = arguments.get("blob") or ""
+            diff = arguments.get("diff") or ""
+            if diff and (not rejected or not preferred):
+                parsed_r, parsed_p, parsed_ctx = parse_diff_text(diff)
+                rejected = rejected or parsed_r
+                preferred = preferred or parsed_p
+                context = context or parsed_ctx
+                reason = reason or "Learned from diff"
             if blob and (not rejected or not preferred):
                 parsed_r, parsed_p, parsed_reason = parse_correction_blob(blob)
                 rejected = rejected or parsed_r
                 preferred = preferred or parsed_p
                 reason = reason or parsed_reason
             if not preferred:
-                raise ValueError("preferred (or blob) is required")
+                raise ValueError("preferred (or blob/diff) is required")
             result = learn_correction(
                 rejected or "(unspecified)",
                 preferred,

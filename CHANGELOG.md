@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-12
+
+### Added
+
+- `pyrecall learn --diff` — learn rejected/preferred from a unified diff/patch
+- `pyrecall recall --under PATH` — scope memories to a directory
+- `pyrecall consolidate` — merge near-duplicate correction skills
+- Skill packs: uv, poetry, mypy, celery, pytest-asyncio
+- Stronger `doctor` store health (unused skills, orphans, harvest/index hints)
+- Playbook grouped by topic tags
+- Animated `docs/demo.svg` hero (harvest → learn --diff → recall)
+
+### Changed
+
+- Learning merges closer existing correction skills more aggressively
+
 ## [0.4.0] - 2026-07-11
 
 ### Added
@@ -73,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - PyPI distribution name is `pyrecall-cli` (because `pyrecall` / `py-recall` collide with an existing project); import and CLI remain `pyrecall`
 
+[0.5.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.5.0
 [0.4.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.4.0
 [0.3.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mjpt1/pyrecall/releases/tag/v0.2.0
